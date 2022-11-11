@@ -51,31 +51,20 @@ std::vector<size_t> determine_ls(std::vector<size_t> gs){
 	return out;
 }
 
-int run_cl_haver(){
-
-	//Temp data for testing
-	std::vector<float> tmp_latdata1 = {1.1,2.2,3.3};
-	std::vector<float> tmp_londata1 = {1.0,1.1,1.2};
-	std::vector<float> tmp_latdata2 = {1.1,2.2,3.3,4.4};
-	std::vector<float> tmp_londata2 = {1.1,2.2,3.3,4.4};
-
-	int l1 = tmp_latdata1.size();
-	int l2 = tmp_latdata2.size();
+int run_cl_haver(float* lat1,
+		 float* lon1,
+		 float* lat2,
+		 float* lon2,
+		 int l1,
+		 int l2,
+		 float* out){
 
 	int WIDTH = l1;
 	int HEIGHT = l2;
 
-	std::vector<float> out_data(l1*l2);
-	
-	float* lat1 = tmp_latdata1.data();
-	float* lon1 = tmp_londata1.data();
-	float* lat2 = tmp_latdata2.data();
-	float* lon2 = tmp_londata2.data();
-	float* out = out_data.data();
-
 	cl_int ret;
 
-	//Read Kernel Source - TODO
+	//Read Kernel Source
 	std::fstream kern_file("src/kernel.cl");
 	std::vector<std::string> kern_src;
 	std::string kern_line;
@@ -207,7 +196,7 @@ int run_cl_haver(){
 	clReleaseCommandQueue(comQ);
 	clReleaseContext(context);
 
-	std::cout<<out[0]<<std::endl;
+	std::cout<<"Distances calculated successfully."<<std::endl;
 	return 0;
 }
 
@@ -220,17 +209,23 @@ int main(int argc, char** argv){
 	//Row headers used as labels
 	//Assuming lat then lon
 	//Assuming the literal names "Lat" and "Lon"
-	
-	
-	rapidcsv::Document doc0(argv[1], rapidcsv::LabelParams(0, 0));
-	rapidcsv::Document doc1(argv[1], rapidcsv::LabelParams(0, 0));
-	
-	std::vector<float> lat0 = doc0.GetColumn<float>("Lat");
-	std::vector<float> lon0 = doc0.GetColumn<float>("Lon");
-	
-	std::vector<float> lat1 = doc1.GetColumn<float>("Lat");
-	std::vector<float> lon1 = doc1.GetColumn<float>("Lon");
+	int v = 1;
 
-	int v = run_cl_haver();
+	if(argc==3){
+		rapidcsv::Document doc0(argv[1], rapidcsv::LabelParams(0, 0));
+		rapidcsv::Document doc1(argv[2], rapidcsv::LabelParams(0, 0));
+		
+		std::vector<float> lat0 = doc0.GetColumn<float>("Lat");
+		std::vector<float> lon0 = doc0.GetColumn<float>("Lon");
+		
+		std::vector<float> lat1 = doc1.GetColumn<float>("Lat");
+		std::vector<float> lon1 = doc1.GetColumn<float>("Lon");
+
+		std::vector<float> out(lat0.size()*lat1.size());
+
+		v = run_cl_haver(lat0.data(),lon0.data(),lat1.data(),lon1.data(),lat0.size(),lat1.size(),out.data());
+	}else{
+		std::cout<<"Program expects exactly 2 position arguments."<<std::endl;
+	}
 	return v;
 }
