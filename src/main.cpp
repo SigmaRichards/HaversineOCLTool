@@ -173,7 +173,7 @@ int run_cl_haver(float* lat1,
 	//Execute
 	// - clEnqueueNDRangeKernel
 	// - clEnqueueReadBuffer
-	
+	std::cout<<"TEST PLS REMOVE"<<std::endl;
 	std::vector<size_t> gs = determine_gs(l1,l2);
 	std::vector<size_t> ls = determine_ls(gs);
 
@@ -224,6 +224,21 @@ int main(int argc, char** argv){
 		std::vector<float> out(lat0.size()*lat1.size());
 
 		v = run_cl_haver(lat0.data(),lon0.data(),lat1.data(),lon1.data(),lat0.size(),lat1.size(),out.data());
+
+		std::vector<std::string> rownames;
+		for(int i = 0; i < lat0.size(); i++){
+			for(int j = 0; j < lat1.size(); j++){
+				std::string lab = std::to_string(i)+"-"+std::to_string(j);
+				rownames.push_back(lab);	
+			}
+		}
+
+
+
+		rapidcsv::Document docOut;
+		docOut.InsertColumn(0,rownames,"Pairs");
+		docOut.InsertColumn(1,out,"Distance (km)");
+		docOut.Save("out.csv");
 	}else{
 		std::cout<<"Program expects exactly 2 position arguments."<<std::endl;
 	}
