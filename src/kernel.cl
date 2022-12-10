@@ -11,7 +11,6 @@ __kernel void haversine(__global float* lat1,
 	if(i+1 > WIDTH) return;
 	if(j+1 > HEIGHT) return;
 
-	printf("W:%i , H:%i , I:%i , J:%i , L: %i\n",WIDTH,HEIGHT,i,j,loc);
 	
 	float a1r = M_PI_F*lat1[i]/180;
 	float a2r = M_PI_F*lat2[j]/180;

@@ -173,7 +173,6 @@ int run_cl_haver(float* lat1,
 	//Execute
 	// - clEnqueueNDRangeKernel
 	// - clEnqueueReadBuffer
-	std::cout<<"TEST PLS REMOVE"<<std::endl;
 	std::vector<size_t> gs = determine_gs(l1,l2);
 	std::vector<size_t> ls = determine_ls(gs);
 
