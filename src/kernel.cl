@@ -19,7 +19,8 @@ __kernel void haversine(__global float* lat1,
 
 	float dlon = fabs(o1r-o2r);
 	float dlat = fabs(a1r-a2r);
-	float a = pow(sin(dlat/2),2.0) + cos(a1r)*cos(a2r)*pow(sin(dlon/2),2.0);
+	float a = pow(sin(dlat/2),2.0f) ;
+	a += cos(a1r) * cos(a2r) * pow(sin(dlon/2),2.0f);
 	float c = 2*asin(sqrt(a));
 	out[loc] = 6371*c;
 }

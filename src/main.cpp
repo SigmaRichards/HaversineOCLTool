@@ -6,6 +6,21 @@
 #define CL_TARGET_OPENCL_VERSION 300
 #include <CL/cl.h>
 
+std::string cl_build_error_log(cl_program program,cl_device_id device){
+	// Determine the size of the log
+	size_t log_size;
+	clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+	
+	// Allocate memory for the log
+	std::string log(log_size,'x');
+	
+	// Get the log
+	clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size, log.data(), NULL);
+	log = "Program error log below: \n"+log;
+	return log;
+}
+
+
 int cl_error_report(cl_int retv, std::string add = ""){
 	if(retv<0){
 		std::cout<<"OpenCL reported an error."<<std::endl;
@@ -145,7 +160,10 @@ int run_cl_haver(float* lat1,
 	//Build program
 	// - clBuildProgram
 	ret = clBuildProgram(program,1,&dev_id,NULL,NULL,NULL);
-	if(ret!=CL_SUCCESS) return cl_error_report(ret,"BuildProgram error");
+	if(ret!=CL_SUCCESS) {
+		std::string prog_log = cl_build_error_log(program,dev_id);
+		return cl_error_report(ret,"BuildProgram error\n\n"+prog_log);
+	}
 	
 	//Create kernel
 	// - clCreateKernel
