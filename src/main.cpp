@@ -3,6 +3,8 @@
 #include <fstream>
 #include "rapidcsv.h"//Vector defined in here
 
+#include "argparse.h"//Input parsing
+
 #define CL_TARGET_OPENCL_VERSION 300
 #include <CL/cl.h>
 
@@ -227,8 +229,15 @@ int main(int argc, char** argv){
 	//Assuming lat then lon
 	//Assuming the literal names "Lat" and "Lon"
 	int v = 1;
+	
+	input_args parsed = parse_inputs(argc,argv);
+	print_args(parsed);
 
-	if(argc==3){
+	if(parsed.ret_status != 0){
+		return parsed.ret_status;
+	}
+
+	if(false){
 		rapidcsv::Document doc0(argv[1], rapidcsv::LabelParams(0, 0));
 		rapidcsv::Document doc1(argv[2], rapidcsv::LabelParams(0, 0));
 		
