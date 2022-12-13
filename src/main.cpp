@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <limits> //Used for calculating nearest point
 #include "rapidcsv.h"//Vector defined in here
 
 #include "argparse.h"//Input parsing
@@ -255,7 +256,9 @@ int main(int argc, char** argv){
 
 
 	std::vector<std::string> rownames;
+	std::vector<std::string> short_rownames;
 	std::vector<float> out;
+	std::vector<float> short_out;
 	
 	if (!parsed.single_csv){
 		//Load second document
@@ -276,10 +279,13 @@ int main(int argc, char** argv){
 			lon1 = doc1.GetColumn<float>(parsed.lon1_ind);
 
 		out.resize(lat0.size()*lat1.size());
+		short_out.resize(lat0.size());
 
 		v = run_cl_haver(lat0.data(),lon0.data(),lat1.data(),lon1.data(),lat0.size(),lat1.size(),out.data());
 
 		for(int i = 0; i < lat0.size(); i++){
+			float nearest_dis = std::numeric_limits<float>::infinity();
+			std::string nearest_name = "";
 			for(int j = 0; j < lat1.size(); j++){
 				std::string iname = std::to_string(i);
 				std::string jname = std::to_string(j);
@@ -288,8 +294,14 @@ int main(int argc, char** argv){
 					jname = doc1.GetRowName(j);
 				}
 				std::string lab = iname + "-" + jname;
-				rownames.push_back(lab);	
+				rownames.push_back(lab);
+				if(out[i*lat1.size() + j]<nearest_dis){
+					nearest_dis = out[i*lat1.size()+j];
+					nearest_name = lab;
+				}
 			}
+			short_out[i] = nearest_dis;
+			short_rownames.push_back(nearest_name);
 		}
 	} else {
 		fprintf(stderr,"Single CSV mode not yet implemented! Please run with the same csv as both CSV1 and CSV2.\n");
@@ -299,8 +311,15 @@ int main(int argc, char** argv){
 
 
 	rapidcsv::Document docOut;
-	docOut.InsertColumn(0,rownames,"Pairs");
-	docOut.InsertColumn(1,out,"Distance (km)");
-	docOut.Save("out.csv");
+	if(parsed.nearest_only){
+		docOut.InsertColumn(0,short_rownames,"Nearest Pairs");
+		docOut.InsertColumn(0,short_out,"Distance (km)");
+		docOut.Save("out.csv");
+
+	} else {
+		docOut.InsertColumn(0,rownames,"Pairs");
+		docOut.InsertColumn(1,out,"Distance (km)");
+		docOut.Save("out.csv");
+	}
 	return v;
 }
