@@ -75,10 +75,13 @@ int run_cl_haver(float* lat1,
 		 float* lon2,
 		 int l1,
 		 int l2,
-		 float* out){
+		 float* out,
+		 bool s_csv){
 
 	int WIDTH = l1;
 	int HEIGHT = l2;
+	int S_CSV = 0;
+	if (s_csv) S_CSV=1;
 
 	cl_int ret;
 
@@ -189,6 +192,8 @@ int run_cl_haver(float* lat1,
 	if(ret!=CL_SUCCESS) return cl_error_report(ret,"clSetKernelArg WIDTH");
 	ret = clSetKernelArg(kernel,6,sizeof(int),(void*)&HEIGHT);
 	if(ret!=CL_SUCCESS) return cl_error_report(ret,"clSetKernelArg HEIGHT");
+	ret = clSetKernelArg(kernel,7,sizeof(int),(void*)&S_CSV);
+	if(ret!=CL_SUCCESS) return cl_error_report(ret,"clSetKernelArg s_csv");
 
 
 	//Execute
@@ -238,6 +243,10 @@ int main(int argc, char** argv){
 	if(parsed.ret_status != 0){
 		return parsed.ret_status;
 	}
+
+	if(parsed.nearest_only && parsed.single_csv)
+		printf("WARNING: Using in both nearest only and single csv not supported. Ignoring nearest only.\n");
+
 	//Load documents - use -1 for headers for rapidcsv
 	rapidcsv::Document doc0(parsed.csv0, rapidcsv::LabelParams(parsed.col_heads - 1, parsed.row_heads - 1));
 	
@@ -257,17 +266,22 @@ int main(int argc, char** argv){
 
 	std::vector<std::string> rownames;
 	std::vector<std::string> short_rownames;
+	std::vector<std::string> single_rownames;
+
 	std::vector<float> out;
 	std::vector<float> short_out;
+	std::vector<float> single_out;
+
+	std::vector<float> lat1;
+	std::vector<float> lon1;
 	
-	if (!parsed.single_csv){
-		//Load second document
-		rapidcsv::Document doc1(parsed.csv1, rapidcsv::LabelParams(parsed.col_heads - 1, parsed.row_heads - 1));
+	//Get second document
+	std::string acsv1 = parsed.csv1;
+	if (parsed.single_csv) acsv1 = parsed.csv0;
+	rapidcsv::Document doc1(acsv1, rapidcsv::LabelParams(parsed.col_heads - 1, parsed.row_heads - 1));
 
-		//Get second coords
-		std::vector<float> lat1;
-		std::vector<float> lon1;
-
+	//Get second coords
+	if(!parsed.single_csv){
 		if (parsed.lat1_name != "")
 			lat1 = doc1.GetColumn<float>(parsed.lat1_name);
 		else
@@ -277,46 +291,56 @@ int main(int argc, char** argv){
 			lon1 = doc1.GetColumn<float>(parsed.lon1_name);
 		else
 			lon1 = doc1.GetColumn<float>(parsed.lon1_ind);
-
-		out.resize(lat0.size()*lat1.size());
-		short_out.resize(lat0.size());
-
-		v = run_cl_haver(lat0.data(),lon0.data(),lat1.data(),lon1.data(),lat0.size(),lat1.size(),out.data());
-
-		for(int i = 0; i < lat0.size(); i++){
-			float nearest_dis = std::numeric_limits<float>::infinity();
-			std::string nearest_name = "";
-			for(int j = 0; j < lat1.size(); j++){
-				std::string iname = std::to_string(i);
-				std::string jname = std::to_string(j);
-				if (parsed.row_heads){
-					iname = doc0.GetRowName(i);
-					jname = doc1.GetRowName(j);
-				}
-				std::string lab = iname + "-" + jname;
-				rownames.push_back(lab);
-				if(out[i*lat1.size() + j]<nearest_dis){
-					nearest_dis = out[i*lat1.size()+j];
-					nearest_name = lab;
-				}
-			}
-			short_out[i] = nearest_dis;
-			short_rownames.push_back(nearest_name);
-		}
 	} else {
-		fprintf(stderr,"Single CSV mode not yet implemented! Please run with the same csv as both CSV1 and CSV2.\n");
-		return 1;
+		lat1 = lat0;
+		lon1 = lon0;
+	}
+
+	out.resize(lat0.size()*lat1.size());
+	short_out.resize(lat0.size());
+
+	v = run_cl_haver(lat0.data(),lon0.data(),
+			 lat1.data(),lon1.data(),
+			 lat0.size(),lat1.size(),
+			 out.data(),parsed.single_csv);
+
+	for(int i = 0; i < lat0.size(); i++){
+		float nearest_dis = std::numeric_limits<float>::infinity();
+		std::string nearest_name = "";
+		for(int j = 0; j < lat1.size(); j++){
+			std::string iname = std::to_string(i);
+			std::string jname = std::to_string(j);
+			if (parsed.row_heads){
+				iname = doc0.GetRowName(i);
+				jname = doc1.GetRowName(j);
+			}
+			std::string lab = iname + "-" + jname;
+			rownames.push_back(lab);
+			if(out[i*lat1.size() + j]<nearest_dis){
+				nearest_dis = out[i*lat1.size()+j];
+				nearest_name = lab;
+			}
+			if(j>i){
+				single_rownames.push_back(lab);
+				single_out.push_back(out[i*lat1.size()+j]);
+			}
+		}
+		short_out[i] = nearest_dis;
+		short_rownames.push_back(nearest_name);
 	}
 
 
-
 	rapidcsv::Document docOut;
-	if(parsed.nearest_only){
-		docOut.InsertColumn(0,short_rownames,"Nearest Pairs");
-		docOut.InsertColumn(0,short_out,"Distance (km)");
+	if(parsed.single_csv){
+		docOut.InsertColumn(0,single_rownames,"Pairs");
+		docOut.InsertColumn(0,single_out,"Distance (km)");
 		docOut.Save("out.csv");
 
-	} else {
+	} else if(parsed.nearest_only){
+		docOut.InsertColumn(0,short_rownames,"Pairs");
+		docOut.InsertColumn(0,short_out,"Distance (km)");
+		docOut.Save("out.csv");
+	}else {
 		docOut.InsertColumn(0,rownames,"Pairs");
 		docOut.InsertColumn(1,out,"Distance (km)");
 		docOut.Save("out.csv");

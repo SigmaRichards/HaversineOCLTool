@@ -3,10 +3,12 @@ __kernel void haversine(__global float* lat1,
 			__global float* lat2,
 			__global float* lon2,
 			__global float* out,
-			int WIDTH,int HEIGHT){
+			int WIDTH,int HEIGHT,int s_csv){
 	int i = get_global_id(0);
 	int j = get_global_id(1);
 	int loc = i*HEIGHT+j;
+
+	if((s_csv>0) && (j<=i)) return;
 
 	if(i+1 > WIDTH) return;
 	if(j+1 > HEIGHT) return;
