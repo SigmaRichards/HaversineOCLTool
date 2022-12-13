@@ -1,6 +1,6 @@
 # OpenCL Haversines
 
-This is a tool for calculating haversine distances between coordinates. This is a tool being used as part of a personal project and thus may have limited applicability beyond that. The tool is designed to take 2 CSV files (lets say A and B) and compute all paired distances from A to B. The tool is partially working however there are a number of caveats based on the very early stage of this project. See below.
+This is a tool for calculating haversine distances between coordinates. This is a tool being used as part of a personal project and thus may have limited applicability beyond that. The tool is designed to take 2 CSV files (lets say A and B) and compute all paired distances from A to B.
 
 ## RapidCSV
 
@@ -11,23 +11,20 @@ In this project I make use of Kristofer Berggren's rapidcsv header. This is avai
 
 General usage is as below:
 
-```./haversines fileA.csv fileB.csv```
+```./haversines file1.csv file2.csv [options]```
 
-The output will compute the distance from every point in A to every point in B and return it in a list written to `out.csv`.
+The output will compute the distance from every point in file1 to every point in file2 and return it in a list written to `out.csv`.
 
-## Current limitations
+## Options
 
-Currently the program is very limited in terms of usage. The input CSVs must have a header row and a row name. Additionally, the column for Latitude must be labelled "Lat" and the column for Longitude must be labelled "Lon". This is for both CSVs. For reference, you can look at the test CSVs.
+Options are only required if using a different format csv.
 
-Additionally the output labels are based on index from A to B, they do not currently depend on any labels from the CSVs.
-
-## Future work
-
-Here are a list of future modifications I plan to make to the tool to aid usability. Some of these are specific to my future use cases and some are just general usability improvements.
-
- - [ ] Improve CSV support - this includes things like header options, label support on output and default values (to avoid seg faults).
- - [ ] Single argument format - this is so the distance matrix can be computed for a single csv instead of requiring a second CSV. This can be achieved by making A and B the same CSV however this should remove redundant computations i.e. $D(x,x)$ = 0 and $D(x,y)=D(y,x)$.
- - [ ] Closest point mode - where only the distance to the closest other point is reported as opposed to all points.
+ - `-v` verbose mode. Prints input parameters or defaults where not specified.
+ - `-c` and `-r` turn off column headers and row headers. CSVs are assumed to have both of these as the first row and column respectively. If row headers are available, the output file will use these names toto show each pair. If column headers are available, you can specify column names for lat/lon.
+ - `-n` nearest point mode. Use this to return only the nearest pairs of points. All points in file1 will be in the output, and each corresponding nearest point in file2.
+ - `s` single csv mode. Use this if distance matrix on a single csv is required. Will skip $D(x,x)$ and one of $D(x,y),D(y,x)$ in the output file.
+ - `-a` and `-A` specify the column name for the latitudes. Use `-a` for file1 and `-A` for file2. Alternatively can use `-i` and `-I` for the column index. If no row headers, the first column is indexed 0, otherwise the second column is indexed 0.
+ - `-b` and `-B` specify the column name for the longitudes. Use `-b` for file1 and `-B` for file2. Similarly as above can use `-j` and `-J` to specify the column index.
 
 
 
