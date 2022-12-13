@@ -26,7 +26,7 @@ Additionally the output labels are based on index from A to B, they do not curre
 Here are a list of future modifications I plan to make to the tool to aid usability. Some of these are specific to my future use cases and some are just general usability improvements.
 
  - [ ] Improve CSV support - this includes things like header options, label support on output and default values (to avoid seg faults).
- - [ ] Single argument format - this is so the distance matrix can be computed for a single csv instead of requiring a second CSV. This can be achieved by making A and B the same CSV however this should remove redundant computations i.e. $$D(x,x)$$ = 0 and $$D(x,y)=D(y,x)$$.
+ - [ ] Single argument format - this is so the distance matrix can be computed for a single csv instead of requiring a second CSV. This can be achieved by making A and B the same CSV however this should remove redundant computations i.e. $D(x,x)$ = 0 and $D(x,y)=D(y,x)$.
  - [ ] Closest point mode - where only the distance to the closest other point is reported as opposed to all points.
 
 
