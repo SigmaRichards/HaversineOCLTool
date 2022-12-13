@@ -1,6 +1,7 @@
 #include <unistd.h>
 
 struct input_args{
+	bool verbose = false;
 	int ret_status = 0;
 	bool col_heads = true;
 	bool row_heads = true;
@@ -53,8 +54,11 @@ struct input_args parse_inputs(int argc, char** argv){
 	
 	opterr = 0;
 	int c;
-	while ((c = getopt (argc, argv, "crnsa:b:A:B:i:j:I:J:")) != -1){
+	while ((c = getopt (argc, argv, "vcrnsa:b:A:B:i:j:I:J:")) != -1){
 		switch(c){
+			case 'v':
+				output.verbose = true;
+				break;
 			case 'c':
 				output.col_heads = false;
 				break;

@@ -231,19 +231,17 @@ int main(int argc, char** argv){
 	int v = 1;
 	
 	input_args parsed = parse_inputs(argc,argv);
-	//print_args(parsed);
+
+	if (parsed.verbose) print_args(parsed);
 
 	if(parsed.ret_status != 0){
 		return parsed.ret_status;
 	}
 	//Load documents - use -1 for headers for rapidcsv
 	rapidcsv::Document doc0(parsed.csv0, rapidcsv::LabelParams(parsed.col_heads - 1, parsed.row_heads - 1));
-	rapidcsv::Document doc1(parsed.csv1, rapidcsv::LabelParams(parsed.col_heads - 1, parsed.row_heads - 1));
 	
 	std::vector<float> lat0;
 	std::vector<float> lon0;
-	std::vector<float> lat1;
-	std::vector<float> lon1;
 
 	if (parsed.lat0_name != "")
 		lat0 = doc0.GetColumn<float>(parsed.lat0_name);
@@ -254,28 +252,42 @@ int main(int argc, char** argv){
 		lon0 = doc0.GetColumn<float>(parsed.lon0_name);
 	else
 		lon0 = doc0.GetColumn<float>(parsed.lon0_ind);
-	
-	if (parsed.lat1_name != "")
-		lat1 = doc1.GetColumn<float>(parsed.lat1_name);
-	else
-		lat1 = doc1.GetColumn<float>(parsed.lat1_ind);
-	
-	if (parsed.lon1_name != "")
-		lon1 = doc1.GetColumn<float>(parsed.lon1_name);
-	else
-		lon1 = doc1.GetColumn<float>(parsed.lon1_ind);
-	
 
-	std::vector<float> out(lat0.size()*lat1.size());
-
-	v = run_cl_haver(lat0.data(),lon0.data(),lat1.data(),lon1.data(),lat0.size(),lat1.size(),out.data());
 
 	std::vector<std::string> rownames;
-	for(int i = 0; i < lat0.size(); i++){
-		for(int j = 0; j < lat1.size(); j++){
-			std::string lab = std::to_string(i)+"-"+std::to_string(j);
-			rownames.push_back(lab);	
+	std::vector<float> out;
+	
+	if (!parsed.single_csv){
+		//Load second document
+		rapidcsv::Document doc1(parsed.csv1, rapidcsv::LabelParams(parsed.col_heads - 1, parsed.row_heads - 1));
+
+		//Get second coords
+		std::vector<float> lat1;
+		std::vector<float> lon1;
+
+		if (parsed.lat1_name != "")
+			lat1 = doc1.GetColumn<float>(parsed.lat1_name);
+		else
+			lat1 = doc1.GetColumn<float>(parsed.lat1_ind);
+		
+		if (parsed.lon1_name != "")
+			lon1 = doc1.GetColumn<float>(parsed.lon1_name);
+		else
+			lon1 = doc1.GetColumn<float>(parsed.lon1_ind);
+
+		out.resize(lat0.size()*lat1.size());
+
+		v = run_cl_haver(lat0.data(),lon0.data(),lat1.data(),lon1.data(),lat0.size(),lat1.size(),out.data());
+
+		for(int i = 0; i < lat0.size(); i++){
+			for(int j = 0; j < lat1.size(); j++){
+				std::string lab = std::to_string(i)+"-"+std::to_string(j);
+				rownames.push_back(lab);	
+			}
 		}
+	} else {
+		fprintf(stderr,"Single CSV mode not yet implemented! Please run with the same csv as both CSV1 and CSV2.\n");
+		return 1;
 	}
 
 
