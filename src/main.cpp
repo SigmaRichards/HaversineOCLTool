@@ -281,7 +281,13 @@ int main(int argc, char** argv){
 
 		for(int i = 0; i < lat0.size(); i++){
 			for(int j = 0; j < lat1.size(); j++){
-				std::string lab = std::to_string(i)+"-"+std::to_string(j);
+				std::string iname = std::to_string(i);
+				std::string jname = std::to_string(j);
+				if (parsed.row_heads){
+					iname = doc0.GetRowName(i);
+					jname = doc1.GetRowName(j);
+				}
+				std::string lab = iname + "-" + jname;
 				rownames.push_back(lab);	
 			}
 		}
